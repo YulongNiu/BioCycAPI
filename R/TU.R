@@ -110,7 +110,7 @@ getCycTUInfo <- function(TUID, speID) {
 ##' BioCyc Database API - Get whole transcription unit list of a given species from BioCyc database.
 ##' Get transcription units from a given species. It may take more than 10 minutes to retrieve the xml file.
 ##'
-##' @title Get TU
+##' @title TU
 ##' @param speID The BioCyc species ID, for example "ECOLI" is for "Escherichia coli K-12 substr. MG1655".
 ##' @return A vector of TU ids.
 ##' @examples
