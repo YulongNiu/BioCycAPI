@@ -1,7 +1,7 @@
 Package: BioCycAPI
 Title: A package for providing BioCyc databases API in R
 Description: BioCyc API.
-Version: 0.1.0
+Version: 0.1.1
 Author: Yulong Niu <niuylscu@gmail.com>
 Maintainer: Yulong Niu <niuylscu@gmail.com>
 Depends:
