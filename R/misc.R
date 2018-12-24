@@ -5,7 +5,7 @@
 ##' @param xmlFile XML file.
 ##' @param nodePath The XPath of nodeset (one or mutiple nodes).
 ##' @return Nodeset value
-##' @author Yulong Niu \email{niuylscu@@gmail.com}
+##' @author Yulong Niu \email{yulong.niu@@hotmail.com}
 ##' @importFrom XML getNodeSet xmlValue
 ##' @keywords internal
 ##' 
@@ -26,7 +26,7 @@ xmlNodeVal <- function(xmlFile, nodePath){
 ##' @param nodePath The XPath of nodeset (one or mutiple nodes).
 ##' @param attrName Attributes name
 ##' @return Nodeset attributes
-##' @author Yulong Niu \email{niuylscu@@gmail.com}
+##' @author Yulong Niu \email{yulong.niu@@hotmail.com}
 ##' @importFrom XML getNodeSet xmlValue
 ##' @keywords internal
 ##' 
@@ -43,12 +43,12 @@ xmlNodeAttr <- function(xmlFile, nodePath, attrName){
 ##' Test if the input vector's length is 0
 ##'
 ##' To test the length of input vector, if the length is 0, return "trueVal", else return "falseval"
-##' @title Test length is 0 or not 
+##' @title Test length is 0 or not
 ##' @param inputVal vector
 ##' @param trueVal return this value, if the length of "inputVal" is 0.
 ##' @param falseVal return this value, if the length of "falseVal" is not 0.
 ##' @return "trueVal" or "falseVal"
-##' @author Yulong Niu \email{niuylscu@@gmail.com}
+##' @author Yulong Niu \email{yulong.niu@@hotmail.com}
 ##' @keywords internal
 ##' 
 testLen <- function(inputVal, trueVal, falseVal) {

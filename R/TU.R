@@ -8,11 +8,10 @@
 ##' @param evidence  Logical value indicates whether to return the evidence value.
 ##' @return A vector contains TUs or NULL
 ##' @examples getCycTUfGene('EG10102', 'ECOLI')
-##' @author Yulong Niu \email{niuylscu@@gmail.com}
+##' @author Yulong Niu \email{yulong.niu@@hotmail.com}
 ##' @importFrom XML xmlRoot xmlTreeParse
 ##' @export
 ##'
-##' 
 getCycTUfGene <- function(geneID, speID, evidence = FALSE) {
 
   ## read in TU information XML
@@ -40,7 +39,7 @@ getCycTUfGene <- function(geneID, speID, evidence = FALSE) {
 ##' getCycTUInfo('TU0-6636', 'ECOLI')
 ##' getCycTUInfo('TU00260', 'ECOLI')
 ##' getCycTUInfo('TUC7Z-43', 'SMUT210007')
-##' @author Yulong Niu \email{niuylscu@@gmail.com}
+##' @author Yulong Niu \email{yulong.niu@@hotmail.com}
 ##' @importFrom XML xmlRoot xmlTreeParse
 ##' @export
 ##'
@@ -90,7 +89,7 @@ getCycTUInfo <- function(TUID, speID) {
                    rightPos = rightPos,
                    leftPos = leftPos,
                    Ev = PMEv)
-  
+
   ## TU evidence
   TUEv <- xmlNodeAttr(TUInfoXML, '//Transcription-Unit/evidence/Evidence-Code', 'frameid')
   TUEv <- testLen(TUEv, NULL, TUEv)
@@ -116,9 +115,10 @@ getCycTUInfo <- function(TUID, speID) {
 ##' @examples
 ##' ## get Streptococcus mutans UA159 TU
 ##' smTU <- getCycTU('SMUT210007')
-##' @author Yulong Niu \email{niuylscu@@gmail.com}
+##' @author Yulong Niu \email{yulong.niu@@hotmail.com}
 ##' @importFrom xml2 read_xml xml_text xml_find_all
 ##' @export
+##' 
 getCycTU <- function(speID){
 
   url <- paste0('http://websvc.biocyc.org/xmlquery?[x:x%3C-', speID, '^^Transcription-Units]')

@@ -8,20 +8,19 @@
 ##' @examples
 ##' ## get human, mouse, and Ecoli NCBI taxonomy ID with 2 threads
 ##' transPhyloCyc2NCBI(c('HUMAN', 'MOUSE', 'ECOLI'), n = 2)
-##' 
+##'
 ##' \dontrun{
 ##' ## transfer all BioCyc species ID to NCBI taxonomy ID
 ##' wBiocycSpe <- getCycPhylo(whole = TRUE)
 ##' wNCBISpe <- transPhyloCyc2NCBI(wBiocycSpe[, 1])
 ##' }
-##' @author Yulong Niu \email{niuylscu@@gmail.com}
+##' @author Yulong Niu \email{yulong.niu@@hotmail.com}
 ##' @importFrom RCurl getURL
 ##' @importFrom doMC registerDoMC
 ##' @importFrom foreach foreach %dopar%
 ##' @importFrom KEGGAPI getcontent
 ##' @export
 ##'
-##' 
 transPhyloCyc2NCBI <- function(cycID, n = 4){
 
   registerDoMC(n)
@@ -54,4 +53,3 @@ transPhyloCyc2NCBI <- function(cycID, n = 4){
   return(cycTax)
 
 }
- 

@@ -11,18 +11,17 @@
 ##' @examples
 ##' ## search species list from BioCyc ID
 ##' getCycPhylo(c('HUMAN', 'ECOLI', 'ZMOB579138'), speType = 'BioCyc')
-##' 
+##'
 ##' ## search species whose names include 'Escherichia coli'
 ##' getCycPhylo('Escherichia coli', speType = 'regexpr')
-##' 
+##'
 ##' \dontrun{
 ##' ## get whole BioCyc species information table
 ##' getCycPhylo(whole = TRUE)}
-##' @author Yulong Niu \email{niuylscu@@gmail.com}
+##' @author Yulong Niu \email{yulong.niu@@hotmail.com}
 ##' @importFrom xml2 read_xml xml_find_all xml_attrs xml_text xml_children
 ##' @export
 ##'
-##' 
 getCycPhylo <- function(speList, speType = 'BioCyc', whole = FALSE) {
 
   if (!(speType %in% c('BioCyc', 'regexpr'))) {
@@ -43,7 +42,7 @@ getCycPhylo <- function(speList, speType = 'BioCyc', whole = FALSE) {
     eachLatin <- xml_text(xml_children(x))
     return(eachLatin)
   })
-  
+
   cycLatin <- sapply(cycLatin, paste, collapse = ' ')
   cycSpeMat <- cbind(cycSpeID[, 1], cycLatin, cycSpeID[, 2])
   colnames(cycSpeMat) <- c('BioCycID', 'LatinName', 'Version')
@@ -69,36 +68,32 @@ getCycPhylo <- function(speList, speType = 'BioCyc', whole = FALSE) {
 ##' @param type Get the "genes" or "proteins", and the default value is "genes".
 ##' @return A vector of genes of proteins with BioCyc ID.
 ##' @examples
-##' getCycGenesList('ECOLI')
-##' @author Yulong Niu \email{niuylscu@@gmail.com}
-##' @importFrom XML xmlRoot xmlTreeParse getNodeSet xmlGetAttr
+##' getCycGenes('ECOLI')
+##' @author Yulong Niu \email{yulong.niu@@hotmail.com}
+##' @importFrom xml2 read_xml
+##' @importFrom magrittr %>%
 ##' @export
 ##'
-##' 
-getCycGenesList <- function(speID, type = 'genes'){
+##'
+getCycGenes <- function(speID, type = 'genes'){
 
   ## read in the whole biocyc XML file
-  url <- paste('http://biocyc.org/xmlquery?query=[x:x<-', speID, '^^', type, ']&detail=none', sep = '')
-  cycListXML <- xmlRoot(xmlTreeParse(url))
+  cycxml <- paste0('http://biocyc.org/xmlquery?query=[x:x<-', speID, '^^', type, ']&detail=none') %>%
+    URLencode %>%
+    read_xml
 
-  ## get gene/protein information
-  if (type == 'genes') {
-    cycList <- getNodeSet(cycListXML, '//Gene')
-  } else if (type == 'proteins') {
-    cycList <- getNodeSet(cycListXML, '//Protein')
-  }
-  ## delect the ones with 'class = "true"', for example "<Gene resource="getxml?HUMAN:BC-1.7.29" orgid="HUMAN" frameid="BC-1.7.29" class="true"/>".
-  cycList <- sapply(cycList, function(x){
-    if (is.null(xmlGetAttr(x, 'class'))) {
-      cycID <- xmlGetAttr(x, 'frameid')
-    } else {
-      cycID <- NULL
-    }
-    return(cycID)
-  })
+  ## select proteins or genes
+  ## <Gene resource="getxml?ECOLI:G7553" orgid="ECOLI" frameid="G7553"/>
+  ## remove <Gene resource="getxml?ECOLI:BC-2.2.2" orgid="ECOLI" frameid="BC-2.2.2" class="true"/>
+  nd <- ifelse(type == 'genes', 'Gene', 'Protein')
 
-  return(unlist(cycList))
+  res <- nd %>%
+    paste0(., '[not(@class)]') %>%
+    xml_find_all(cycxml, .) %>%
+    xml_attr(., 'frameid') %>%
+    paste(speID, ., sep = ':')
 
+  return(res)
 }
 
 ##' BioCyc Database API - Get gene information from BioCyc database.
@@ -111,7 +106,7 @@ getCycGenesList <- function(speID, type = 'genes'){
 ##' @examples
 ##' ## get "atpE" gene information from Ecoli K-12 MG1655 strain.
 ##' getCycGeneInfo('EG10102', 'ECOLI')
-##' @author Yulong Niu \email{niuylscu@@gmail.com}
+##' @author Yulong Niu \email{yulong.niu@@hotmail.com}
 ##' @importFrom XML xmlRoot xmlTreeParse getNodeSet xmlName
 ##' @export
 ##'
@@ -183,7 +178,7 @@ getCycGeneInfo <- function(geneID, speID){
 ##' 
 ##' ## retrieve protein
 ##' transGeneIDKEGG2Cyc('b0001', 'eco', 'ECOLI', type = 'protein')
-##' @author Yulong Niu \email{niuylscu@@gmail.com}
+##' @author Yulong Niu \email{yulong.niu@@hotmail.com}
 ##' @importFrom xml2 read_xml xml_children xml_attr
 ##' @importFrom KEGGAPI webTable convKEGG
 ##' @export
@@ -232,12 +227,12 @@ transGeneIDKEGG2Cyc <- function(KEGGID, speKEGGID, speCycID, type = 'gene') {
     ## geneXML <- xmlRoot(xmlTreeParse(url))
     ## cycID <- xmlNodeAttr(geneXML, '/ptools-xml/Gene', 'frameid')
     ## cycID <- testLen(cycID, '0', cycID)
-    
+
     ## try symbol
     url <- paste0('http://websvc.biocyc.org/xmlquery?query=[x:x%3C-',speCycIDtry, '^^genes,x^name%3D%22', symboltry, '%22]&detail=full')
     geneXML <- read_xml(url)
     geneXMLChild <- xml_children(geneXML)
-    
+
     ## check if xml returns geneID
     if (length(geneXMLChild) < 2) {
       cycID = '0'
@@ -245,11 +240,11 @@ transGeneIDKEGG2Cyc <- function(KEGGID, speKEGGID, speCycID, type = 'gene') {
       geneXMLChildCont <- geneXMLChild[[2]]
       cycID <- xml_attr(geneXMLChildCont, 'frameid', default = '0')
     }
-    
+
     cycIDList <- list(cycID = cycID, url = url)
     ## # also get protein
     ## cycID <- xmlNodeAttr(geneXML, '//Protein', 'frameid')
-    
+
     return(cycIDList)
   }
 
@@ -268,7 +263,7 @@ transGeneIDKEGG2Cyc <- function(KEGGID, speKEGGID, speCycID, type = 'gene') {
     standKEGGID <- paste(speKEGGID, KEGGID, sep = ':')
     uniproID <- convKEGG('uniprot', standKEGGID, convertType = 'identity', n = 1)
     uniproID <- uniproID[1, 2]
-    
+
     # 'up:Q8DWN9' --> 'Q8DWN9'
     uniproID <- sapply(strsplit(uniproID, split = ':', fixed = TRUE), '[[', 2)
     url <- paste0('http://websvc.biocyc.org/', speCycID, '/foreignid?ids=Uniprot:', uniproID)
@@ -283,7 +278,7 @@ transGeneIDKEGG2Cyc <- function(KEGGID, speKEGGID, speCycID, type = 'gene') {
     cycID <- testLen(cycID, '0', cycID)
     cycIDList <- list(cycID = cycID, url = url)
   }
-  
+
   return(cycIDList)
 }
 
@@ -300,7 +295,7 @@ transGeneIDKEGG2Cyc <- function(KEGGID, speKEGGID, speCycID, type = 'gene') {
 ## # EG10098 EG10101
 ## # "b3734" "b3732"
 ## # @examples transGeneIDKEGG2Cyc(c('b3734', 'b3732'), 'ECOLI')
-## # @author Yulong Niu \email{niuylscu@@gmail.com}
+## # @author Yulong Niu \email{yulong.niu@@hotmail.com}
 ##  @importFrom doMC registerDoMC
 ##  @importFrom foreach foreach
 ##  @export

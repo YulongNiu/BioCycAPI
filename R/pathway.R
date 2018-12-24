@@ -17,7 +17,7 @@
 ##'
 ##' ## genes of pathway "CALBI:PWY3B3-8"
 ##' genes <- getCycGenesfPathway('CALBI:PWY3B3-8')
-##' @author Yulong Niu \email{niuylscu@@gmail.com}
+##' @author Yulong Niu \email{yulong.niu@@hotmail.com}
 ##' @importFrom xml2 read_xml xml_text xml_find_all
 ##' @rdname pathway
 ##' @export
