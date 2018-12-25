@@ -16,7 +16,9 @@ Imports:
     xml2,
     magrittr,
     tibble,
-    dplyr
+    dplyr,
+    urltools,
+    stringr
 ByteCompile: true
 License: GPL
 LazyData: true

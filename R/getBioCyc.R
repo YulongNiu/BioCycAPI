@@ -81,6 +81,7 @@ getCycPhylo <- function(speList, speType = 'BioCyc', whole = FALSE, n = 2) {
 ##' @author Yulong Niu \email{yulong.niu@@hotmail.com}
 ##' @importFrom xml2 read_xml xml_find_all xml_attr
 ##' @importFrom magrittr %>%
+##' @importFrom urltools url_encode
 ##' @export
 ##'
 ##'
@@ -88,7 +89,7 @@ getCycGenes <- function(speID, type = 'genes'){
 
   ## read in the whole biocyc XML file
   cycxml <- paste0('http://biocyc.org/xmlquery?query=[x:x<-', speID, '^^', type, ']&detail=none') %>%
-    URLencode %>%
+    url_encode %>%
     read_xml
 
   ## select proteins or genes
@@ -118,13 +119,14 @@ getCycGenes <- function(speID, type = 'genes'){
 ##' @author Yulong Niu \email{yulong.niu@@hotmail.com}
 ##' @importFrom xml2 read_xml xml_find_all xml_text
 ##' @importFrom magrittr %>%
+##' @importFrom urltools url_encode
 ##' @export
 ##'
 getCycGeneInfo <- function(geneID, speID){
 
   ## read in gene information XML
   url <- paste0('http://biocyc.org/getxml?', speID, ':',geneID, '&detail=full') %>%
-    URLencode
+    url_encode
   genexml <- read_xml(url)
 
   ##~~~~~~~~~~~~~~~~~~~~location in genome~~~~~~~~~~~~~~~~~~~~~~~
@@ -173,7 +175,7 @@ getCycGeneInfo <- function(geneID, speID){
 ##' Convert KEGG ID to BioCyc ID.
 ##'
 ##' Convert the KEGG gene ID to BioCyc gene ID is tricky. In BioCyc, the gene name is not in a uniform; some of them use symbol like "dnaK", but some use the KEGG ID. For genes, if symbol is given, we use 'http://biocyc.org/xmlquery?query=[x:x<-ECOLI^^genes,x^name="atpA"]&detail=full'. There are two circumstances that will return "0": one is that  BioCyc database may marker some genes as "Pseudo-Genes", and the other is different gene symbols in KEGG and BioCyc. For proteins, we at first transfer KEGG gene IDs to UniProt IDs, and then to BioCyc gene IDs.
-##' 
+##'
 ##' @title Transfer KEGG ID to BioCyc ID.
 ##' @param KEGGID Only one KEGG ID
 ##' @param speKEGGID Species BioCyc ID.
@@ -183,14 +185,14 @@ getCycGeneInfo <- function(geneID, speID){
 ##' @examples
 ##' ## symbol is "atpD"
 ##' transGeneIDKEGG2Cyc('b3732', 'eco', 'ECOLI')
-##' 
+##'
 ##' ## symbol is "SMU_408" but the first annotation word is "permease"
 ##' transGeneIDKEGG2Cyc('SMU_408', 'smu', 'SMUT210007')
-##' 
+##'
 ##' ## It will return "0" because of the symbol 'atpE_H' from KEGG.
 ##' ## The symbol in BioCyc is 'atpE/H'.
 ##' transGeneIDKEGG2Cyc('Bd0010', 'bba', 'BBAC264462')
-##' 
+##'
 ##' ## retrieve protein
 ##' transGeneIDKEGG2Cyc('b0001', 'eco', 'ECOLI', type = 'protein')
 ##' @author Yulong Niu \email{yulong.niu@@hotmail.com}
@@ -198,70 +200,7 @@ getCycGeneInfo <- function(geneID, speID){
 ##' @importFrom KEGGAPI webTable convKEGG
 ##' @export
 ##'
-##' 
 transGeneIDKEGG2Cyc <- function(KEGGID, speKEGGID, speCycID, type = 'gene') {
-
-
-  KEGGID2symbol <- function(KEGGIDtry, speKEGGIDtry) {
-    ## transfer KEGG ID to symbol, if it has one; otherwise, we just use the KEGGID
-    ## To save the gene symbol at most, the return gene information is split by ";" and ",". All elements, expect one contains space, are returned.
-    ## USE: try to convert KEGG gene ID to symbole from KEGG gene annoation. If the first 'proper word' is all in lower case, return it plus KEGGID. If no 'proper word', KEGGID returns.
-    ## INPUT: 'KEGGIDtry' is the KEGG gene ID. 'speKEGGIDtry' is the KEGG species ID.
-    ## OUTPUT: A vector (length may be bigger than 1)
-    ## EXAMPLE: KEGGID2symbol('SMU_23', 'smu')
-    ## EXAMPLE: KEGGID2symbol('SMU_t02', 'smu')
-    ## EXAMPLE: KEGGID2symbol('SMU_24', 'smu')
-    ## EXAMPLE: KEGGID2symbol('SMU_20', 'smu')
-    ## EXAMPLE: KEGGID2symbol('SMU_408', 'smu')
-    KEGGsymTable <- webTable(paste('http://rest.kegg.jp/list/', speKEGGIDtry, ':', KEGGIDtry, sep = ''), ncol = 2)
-    KEGGsym <- KEGGsymTable[1, 2]
-
-    ## split by '; ' and ', '
-    ## if KEGGsym is '', then NULL will return. c('test', NULL) is equal to 'test'
-    KEGGEle <- unlist(strsplit(KEGGsym, split = '; ', fixed = TRUE))
-    KEGGEle <- unlist(strsplit(KEGGEle, split = ', ', fixed = TRUE))
-
-    ## remove elements with space
-    KEGGEle <- KEGGEle[!grepl(' ', KEGGEle)]
-
-    ## combine KEGGIDtry
-    KEGGEle <- c(KEGGIDtry, KEGGEle)
-
-    return(KEGGEle)
-  }
-
-  TrySymConv <- function(symboltry, speCycIDtry) {
-    ## USE: try to convert KEGG symbol to Biocyc gene ID
-    ## INPUT: 'symboltry' is the gene symbol extract from KEGG. 'speCycIDtry' is Biocyc species ID.
-    ## OUTPU: converted BioCyc gene ID. '"0"' will return, if not found.
-    ## EXAMPLE: TrySymConv('dnaA', 'SMUT210007')
-    ## EXAMPLE: TrySymConv('SMU_06', 'SMUT210007')
-
-    ## ## old code for xml, but will not work because "%" --> "%25"
-    ## url <- paste0('http://biocyc.org/xmlquery?query=[x:x<-', speCycIDtry, '^^genes,x^name','="', symboltry, '"]&detail=full')
-    ## geneXML <- xmlRoot(xmlTreeParse(url))
-    ## cycID <- xmlNodeAttr(geneXML, '/ptools-xml/Gene', 'frameid')
-    ## cycID <- testLen(cycID, '0', cycID)
-
-    ## try symbol
-    url <- paste0('http://websvc.biocyc.org/xmlquery?query=[x:x%3C-',speCycIDtry, '^^genes,x^name%3D%22', symboltry, '%22]&detail=full')
-    geneXML <- read_xml(url)
-    geneXMLChild <- xml_children(geneXML)
-
-    ## check if xml returns geneID
-    if (length(geneXMLChild) < 2) {
-      cycID = '0'
-    } else {
-      geneXMLChildCont <- geneXMLChild[[2]]
-      cycID <- xml_attr(geneXMLChildCont, 'frameid', default = '0')
-    }
-
-    cycIDList <- list(cycID = cycID, url = url)
-    ## # also get protein
-    ## cycID <- xmlNodeAttr(geneXML, '//Protein', 'frameid')
-
-    return(cycIDList)
-  }
 
   if (type == 'gene') {
     ## convert to symbol
@@ -345,4 +284,94 @@ transGeneIDKEGG2Cyc <- function(KEGGID, speKEGGID, speCycID, type = 'gene') {
 
 
 ## }
+
+
+
+##' KEGG gene ID to symbol
+##'
+##' Try to transfer KEGG ID to symbol, if it has one; otherwise, we just use the `KEGGID`. The return gene information is split by ";" and ",". All elements, expect ones contain space, are returned.
+##'
+##' @title KEGG gene ID to symbol.
+##' @param KEGGID The gene symbol extract from KEGG.
+##' @param speKEGGID KEGG species ID.
+##' @return A \code{character vector} including the raw KEGGID.
+##' @examples
+##' KEGGID2symbol('SMU_23', 'smu')
+##'
+##' KEGGID2symbol('SMU_t02', 'smu')
+##'
+##' KEGGID2symbol('SMU_24', 'smu')
+##'
+##' KEGGID2symbol('SMU_20', 'smu')
+##'
+##' KEGGID2symbol('SMU_408', 'smu')
+##' @author Yulong Niu \email{yulong.niu@@hotmail.com}
+##' @importFrom xml2 read_xml xml_find_all xml_attr xml_text
+##' @importFrom urltools url_encode
+##' @importFrom magrittr %>%
+##' @importFrom stringr str_detect str_trim
+##' @export
+##'
+KEGGID2Sym <- function(KEGGID, speKEGGID) {
+
+  KEGGsymTable <- webTable(paste0('http://rest.kegg.jp/list/', speKEGGID, ':', KEGGID), ncol = 2)
+  KEGGsym <- KEGGsymTable[1, 2]
+
+  ## split by '; ' and ', '
+  ## if KEGGsym is '', then NULL will return. c('test', NULL) is equal to 'test'
+  ele <- KEGGsym %>%
+    strsplit(split = ';', fixed = TRUE) %>% ## split with ';'
+    unlist %>%
+    strsplit(split = ',', fixed = TRUE) %>% ## split with ','
+    unlist %>%
+    str_trim %>%
+    .[!str_detect(., ' ')] %>% ## remove blank space
+    c(KEGGID, .) ## add raw KEGGID
+
+  return(ele)
+}
+
+
+
+##' KEGG symbol to Biocyc gene ID
+##'
+##' Try to convert the KEGG symbol to BioCyc gene ID.
+##'
+##' @title KEGG symbol to BioCyc ID.
+##' @param symbol The gene symbol extract from KEGG.
+##' @param speCycID BioCyc species ID.
+##' @return A \code{list}. The BioCyc gene ID or "0", if gene is not found.
+##' @examples
+##' TrySymConv('dnaA', 'SMUT210007')
+##'
+##' TrySymConv('SMU_06', 'SMUT210007')
+##' @author Yulong Niu \email{yulong.niu@@hotmail.com}
+##' @importFrom xml2 read_xml xml_find_all xml_attr xml_text
+##' @importFrom urltools url_encode
+##' @importFrom magrittr %>%
+##' @export
+##'
+KEGGSym2BioCycID <- function(symbol, speCycID) {
+
+  url <- paste0('http://websvc.biocyc.org/xmlquery?query=[x:x<-', speCycID, '^^genes,x^name%3D"', symbol, '"]&detail=full') %>%
+    url_encode
+
+  symbolxml <- read_xml(url)
+
+  gene <- symbolxml %>%
+    xml_find_all('//Gene[@ID][@frameid]') %>%
+    xml_attr('frameid')
+
+  protein <- symbolxml %>%
+    xml_find_all('//Protein/@frameid') %>%
+    xml_text
+
+  res <- list(gene = gene,
+              protein = protein,
+              url = url)
+
+  return(res)
+}
+
+
 
