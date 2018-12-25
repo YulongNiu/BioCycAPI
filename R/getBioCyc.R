@@ -2,12 +2,11 @@
 ##'
 ##' Get the BioCyc species information including the BioCyc species ID and the Latin name.
 ##' @title Get species from BioCyc
-##' @param speList The species list that is a vector like 'c("HUMAN", "ECOLI", "ZMOB579138")'. The input speList should be consistent with the parameter 'speType'.
-##' @param speType It supports two types: "BioCyc" and "regexpr".
-##' BioCyc type is the BioCyc species ID, for exmaple "HUMAN" is the BioCyc ID for the Homo sapiens.The "regexpr" is used for regulare expression search with the Latin name for example "Escherichia coli".
-##' @param whole Whether or not get the whole BioCyc species list,
-##' and the default value is FALSE.
-##' @return Matrix of species information.
+##' @param speList A \code{character vector} contains species list like 'c("HUMAN", "ECOLI", "ZMOB579138")'. It should be consistent with the parameter `speType`.
+##' @param speType A \code{string} "BioCyc" or "regexpr". "BioCyc" means it is the BioCyc species ID, for example "HUMAN" is the BioCyc ID for the Homo sapiens.The "regexpr" is used for regulare expression search with the Latin name for example "Escherichia coli".
+##' @param whole A \code{logic} whether or not get the whole BioCyc species list, and the default value is FALSE.
+##' @param n A \code{integer} refers to the number of cores.
+##' @return A \code{tbl_df} object contains BioCycID, Latin name, and version.
 ##' @examples
 ##' ## search species list from BioCyc ID
 ##' getCycPhylo(c('HUMAN', 'ECOLI', 'ZMOB579138'), speType = 'BioCyc')
@@ -19,44 +18,54 @@
 ##' ## get whole BioCyc species information table
 ##' getCycPhylo(whole = TRUE)}
 ##' @author Yulong Niu \email{yulong.niu@@hotmail.com}
-##' @importFrom xml2 read_xml xml_find_all xml_attrs xml_text xml_children
+##' @importFrom doParallel registerDoParallel stopImplicitCluster
+##' @importFrom foreach foreach %dopar%
+##' @importFrom tiblle tibble
+##' @importFrom xml2 read_xml xml_find_all xml_attrs xml_text
+##' @importFrom magrittr %>% %<>%
+##' @importFrom dplyr filter
 ##' @export
 ##'
-getCycPhylo <- function(speList, speType = 'BioCyc', whole = FALSE) {
+getCycPhylo <- function(speList, speType = 'BioCyc', whole = FALSE, n = 2) {
 
   if (!(speType %in% c('BioCyc', 'regexpr'))) {
     stop('"speType" now only supports "BioCyc" and "regexpr".')
   } else {}
 
   ## read in the whole biocyc XML file
-  cycSpeXML <- read_xml('http://biocyc.org/xmlquery?dbs')
+  cycxml <- read_xml('http://biocyc.org/xmlquery?dbs')
 
   ## get each species
-  cycSpe <- xml_find_all(cycSpeXML, '//PGDB')
+  cycspe <- cycxml %>%
+    xml_find_all('//PGDB')
 
-  ## get biocyc ID for each species
-  cycSpeID <- t(sapply(cycSpe, xml_attrs))
+  ##~~~~~~~~~~~find species Latin name~~~~~~~~~~~~~~~~
+  registerDoParallel(cores = n)
+  latin <- foreach(i = seq_along(cycspe), .combine = c) %dopar% {
+    eachname <- cycspe[i] %>%
+      xml_find_all('.//text()') %>%
+      xml_text %>%
+      paste(collapse = ' ')
+  }
+  ## stop multiple cores
+  stopImplicitCluster()
+  ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-  ## get latin name of each species
-  cycLatin <- lapply(cycSpe, function(x) {
-    eachLatin <- xml_text(xml_children(x))
-    return(eachLatin)
-  })
+  res <- tibble(BioCycID = xml_attr(cycspe, 'orgid'),
+                LatinName = latin,
+                Version = xml_attr(cycspe, 'version'))
 
-  cycLatin <- sapply(cycLatin, paste, collapse = ' ')
-  cycSpeMat <- cbind(cycSpeID[, 1], cycLatin, cycSpeID[, 2])
-  colnames(cycSpeMat) <- c('BioCycID', 'LatinName', 'Version')
-
+  ## select by ID or regexpr
   if(!whole) {
     if (speType == 'BioCyc') {
-      cycSpeMat <- cycSpeMat[cycSpeMat[, 1] %in% speList, , drop = FALSE]
+      res %<>% filter(BioCycID %in% speList)
     }
     else if (speType == 'regexpr') {
-      cycSpeMat <- cycSpeMat[grep(speList, cycSpeMat[, 2]), , drop = FALSE]
+      res %<>% filter(grepl(speList, LatinName))
     }
   } else {}
 
-  return(cycSpeMat)
+  return(res)
 }
 
 
@@ -70,7 +79,7 @@ getCycPhylo <- function(speList, speType = 'BioCyc', whole = FALSE) {
 ##' @examples
 ##' getCycGenes('ECOLI')
 ##' @author Yulong Niu \email{yulong.niu@@hotmail.com}
-##' @importFrom xml2 read_xml
+##' @importFrom xml2 read_xml xml_find_all xml_attr
 ##' @importFrom magrittr %>%
 ##' @export
 ##'
@@ -107,51 +116,49 @@ getCycGenes <- function(speID, type = 'genes'){
 ##' ## get "atpE" gene information from Ecoli K-12 MG1655 strain.
 ##' getCycGeneInfo('EG10102', 'ECOLI')
 ##' @author Yulong Niu \email{yulong.niu@@hotmail.com}
-##' @importFrom XML xmlRoot xmlTreeParse getNodeSet xmlName
+##' @importFrom xml2 read_xml xml_find_all xml_text
+##' @importFrom magrittr %>%
 ##' @export
 ##'
 getCycGeneInfo <- function(geneID, speID){
 
   ## read in gene information XML
-  url <- paste('http://biocyc.org/getxml?', speID, ':',geneID, '&detail=full', sep = '')
-  geneInfoXML <- xmlRoot(xmlTreeParse(url))
+  url <- paste0('http://biocyc.org/getxml?', speID, ':',geneID, '&detail=full') %>%
+    URLencode
+  genexml <- read_xml(url)
 
-  ## location in genome
-  ## direction
-  dirTrans <- xmlNodeVal(geneInfoXML, '//transcription-direction')
-  ## right end
-  rightPos <- xmlNodeVal(geneInfoXML, '//right-end-position')
-  ## left end
-  leftPos <- xmlNodeVal(geneInfoXML, '//left-end-position')
-  locTrans <- list(dirTrans = dirTrans,
-                   rightPos = rightPos,
-                   leftPos = leftPos)
+  ##~~~~~~~~~~~~~~~~~~~~location in genome~~~~~~~~~~~~~~~~~~~~~~~
+  loc <- list(direction = genexml %>%
+                xml_find_all('//transcription-direction') %>%
+                xml_text,
+              right = genexml %>%
+                xml_find_all('//right-end-position') %>%
+                xml_text,
+              left = genexml %>%
+                xml_find_all('//left-end-position') %>%
+                xml_text)
+  ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-  ## gene names, some genes may not have names
-  ## common name
-  comName <- xmlNodeVal(geneInfoXML, '//common-name')
-  comName <- testLen(comName, NULL, comName)
+  ##~~~~~~~~~~~~~~~~gene names, some genes may not have names~~~~~
+  ## select contains 'accession*', 'synonym', 'common-name'
+  name <- genexml %>%
+    xml_find_all('//*[contains(name(), "accession")] | //synonym | //common-name') %>%
+    xml_text
+  ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-  ## accession, the accession name of node is like 'accession-1', 'accession-2'
-  allNodeName <- sapply(getNodeSet(geneInfoXML, '//*'), xmlName)
-  accNodeName <- allNodeName[grepl('^accession-\\d+', allNodeName)]
-  ## some genes may have no accession name
-  if (length(accNodeName) == 0) {
-    accName = NULL
-  } else {
-    accNodePath <- paste('//', accNodeName, sep = '')
-    accName <- unname(sapply(accNodePath, xmlNodeVal, xmlFile = geneInfoXML))
-  }
-  geneName <- list(comName = comName,
-                   accName = accName)
+  ##~~~~~~~~~~~~~~~~TU~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  TU <- genexml %>%
+    xml_find_all('//Transcription-Unit/@frameid') %>%
+    xml_text
+  ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
   ## merge
-  cycGene <- list(locTrans = locTrans,
-                  geneName = geneName,
-                  url = url)
+  res <- list(loc = loc,
+              name = name,
+              TU = TU,
+              url = url)
 
-  return(cycGene)
-
+  return(res)
 }
 
 

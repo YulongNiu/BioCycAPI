@@ -5,15 +5,18 @@ Version: 0.2.0
 Author: Yulong Niu <yulong.niu@hotmail.com>
 Maintainer: Yulong Niu <yulong.niu@hotmail.com>
 Depends:
-    R (>= 3.2.2)
+    R (>= 3.5.1)
 Imports:
     KEGGAPI,
     RCurl,
     doMC,
+    doParallel,
     foreach,
     XML,
     xml2,
-    magrittr
+    magrittr,
+    tibble,
+    dplyr
 ByteCompile: true
 License: GPL
 LazyData: true
