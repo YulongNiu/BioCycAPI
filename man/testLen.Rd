@@ -23,7 +23,6 @@ Test if the input vector's length is 0
 To test the length of input vector, if the length is 0, return "trueVal", else return "falseval"
 }
 \author{
-Yulong Niu \email{niuylscu@gmail.com}
+Yulong Niu \email{yulong.niu@hotmail.com}
 }
 \keyword{internal}
-

@@ -4,12 +4,10 @@
 \alias{getCycTUInfo}
 \title{Get one TU information}
 \usage{
-getCycTUInfo(TUID, speID)
+getCycTUInfo(TUID)
 }
 \arguments{
 \item{TUID}{A BioCyc TU ID with the length of 1.}
-
-\item{speID}{The BioCyc species ID, for example "ECOLI" is for "Escherichia coli K-12 substr. MG1655".}
 }
 \value{
 A list of TU information.
@@ -22,11 +20,10 @@ Get TU information including genes in TU and evidence.
 There is another way to get the genes "http://biocyc.org/apixml?fn=transcription-unit-genes&id=ECOLI:TU0-42328&detail=full".
 }
 \examples{
-getCycTUInfo('TU0-6636', 'ECOLI')
-getCycTUInfo('TU00260', 'ECOLI')
-getCycTUInfo('TUC7Z-43', 'SMUT210007')
+getCycTUInfo('ECOLI:TU0-6636')
+getCycTUInfo('ECOLI:TU00260')
+getCycTUInfo('SMUT210007:TU1FZX-806')
 }
 \author{
-Yulong Niu \email{niuylscu@gmail.com}
+Yulong Niu \email{yulong.niu@hotmail.com}
 }
-

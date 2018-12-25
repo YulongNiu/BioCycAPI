@@ -21,7 +21,7 @@
 ##' @importFrom xml2 read_xml xml_text xml_find_all
 ##' @rdname pathway
 ##' @export
-##' 
+##'
 getCycPathway <- function(speID) {
 
   url <- paste0('http://biocyc.org/xmlquery?[x:x%3C-', speID, '^^pathways]')

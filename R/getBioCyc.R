@@ -20,7 +20,7 @@
 ##' @author Yulong Niu \email{yulong.niu@@hotmail.com}
 ##' @importFrom doParallel registerDoParallel stopImplicitCluster
 ##' @importFrom foreach foreach %dopar%
-##' @importFrom tiblle tibble
+##' @importFrom tibble tibble
 ##' @importFrom xml2 read_xml xml_find_all xml_attrs xml_text
 ##' @importFrom magrittr %>% %<>%
 ##' @importFrom dplyr filter
@@ -122,6 +122,10 @@ getCycGenes <- function(speID, type = 'genes'){
 ##' @export
 ##'
 getCycGeneInfo <- function(geneID){
+
+  speID <- geneID %>%
+    strsplit(split = ':', fixed = TRUE) %>%
+    sapply('[[', 1)
 
   ## read in gene information XML
   url <- paste0('http://biocyc.org/getxml?', geneID, '&detail=full') %>%
@@ -309,9 +313,9 @@ KEGG2Sym <- function(geneKEGG) {
 ##' @importFrom magrittr %>%
 ##' @export
 ##'
-Sym2BioCyc <- function(symbol, speCyc) {
+Sym2BioCyc <- function(symbol, speBioCyc) {
 
-  url <- paste0('http://websvc.biocyc.org/xmlquery?query=[x:x<-', speCyc, '^^genes,x^name%3D"', symbol, '"]&detail=full') %>%
+  url <- paste0('http://websvc.biocyc.org/xmlquery?query=[x:x<-', speBioCyc, '^^genes,x^name%3D"', symbol, '"]&detail=full') %>%
     url_encode
 
   symbolxml <- read_xml(url)

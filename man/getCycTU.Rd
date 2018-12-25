@@ -14,6 +14,8 @@ A vector of TU ids.
 }
 \description{
 BioCyc Database API - Get whole transcription unit list of a given species from BioCyc database.
+}
+\details{
 Get transcription units from a given species. It may take more than 10 minutes to retrieve the xml file.
 }
 \examples{
@@ -21,6 +23,5 @@ Get transcription units from a given species. It may take more than 10 minutes t
 smTU <- getCycTU('SMUT210007')
 }
 \author{
-Yulong Niu \email{niuylscu@gmail.com}
+Yulong Niu \email{yulong.niu@hotmail.com}
 }
-

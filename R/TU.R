@@ -3,12 +3,14 @@
 ##' Get TU from a given BioCyc gene ID.
 ##' If the given gene has no TU, "NULL" will be returned. If the "evidence" is set to TRUE, a list will return.
 ##' @title Get TU from ID.
-##' @param geneID A BioCyc gene.
 ##' @param evidence  Logical value indicates whether to return the evidence value.
+##' @inheritParams getCycGeneInfo
 ##' @return A \code{list} contains TUs or NULL
 ##' @examples getCycTUfGene('ECOLI:EG10102')
 ##' @author Yulong Niu \email{yulong.niu@@hotmail.com}
-##' @importFrom xml read_xml
+##' @importFrom xml2 read_xml xml_find_all xml_text
+##' @importFrom magrittr %>%
+##' @importFrom urltools url_encode
 ##' @export
 ##'
 getCycTUfGene <- function(geneID, evidence = FALSE) {
@@ -36,7 +38,6 @@ getCycTUfGene <- function(geneID, evidence = FALSE) {
 ##' There is another way to get the genes "http://biocyc.org/apixml?fn=transcription-unit-genes&id=ECOLI:TU0-42328&detail=full".
 ##' @title Get one TU information
 ##' @param TUID A BioCyc TU ID with the length of 1.
-##' @param speID The BioCyc species ID, for example "ECOLI" is for "Escherichia coli K-12 substr. MG1655".
 ##' @return A list of TU information.
 ##' @examples
 ##' getCycTUInfo('ECOLI:TU0-6636')
@@ -44,7 +45,8 @@ getCycTUfGene <- function(geneID, evidence = FALSE) {
 ##' getCycTUInfo('SMUT210007:TU1FZX-806')
 ##' @author Yulong Niu \email{yulong.niu@@hotmail.com}
 ##' @importFrom urltools url_encode
-##' @importFrom xml read_xml xml_text xml_find_all
+##' @importFrom xml2 read_xml xml_text xml_find_all
+##' @importFrom magrittr %>%
 ##' @export
 ##'
 getCycTUInfo <- function(TUID) {

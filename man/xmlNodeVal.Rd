@@ -21,7 +21,6 @@ Get node values.
 Get node values from the XML file.
 }
 \author{
-Yulong Niu \email{niuylscu@gmail.com}
+Yulong Niu \email{yulong.niu@hotmail.com}
 }
 \keyword{internal}
-
