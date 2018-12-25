@@ -4,27 +4,30 @@
 ##' If the given gene has no TU, "NULL" will be returned. If the "evidence" is set to TRUE, a list will return.
 ##' @title Get TU from ID.
 ##' @param geneID A BioCyc gene.
-##' @param speID The BioCyc species ID, for example "ECOLI" is for "Escherichia coli K-12 substr. MG1655".
 ##' @param evidence  Logical value indicates whether to return the evidence value.
-##' @return A vector contains TUs or NULL
-##' @examples getCycTUfGene('EG10102', 'ECOLI')
+##' @return A \code{list} contains TUs or NULL
+##' @examples getCycTUfGene('ECOLI:EG10102')
 ##' @author Yulong Niu \email{yulong.niu@@hotmail.com}
-##' @importFrom XML xmlRoot xmlTreeParse
+##' @importFrom xml read_xml
 ##' @export
 ##'
-getCycTUfGene <- function(geneID, speID, evidence = FALSE) {
+getCycTUfGene <- function(geneID, evidence = FALSE) {
 
   ## read in TU information XML
-  url <- paste0('http://biocyc.org/apixml?fn=transcription-units-of-gene&id=', speID, ':', geneID, '&detail=low')
-  TUInfoXML <- xmlRoot(xmlTreeParse(url))
+  url <- paste0('http://biocyc.org/apixml?fn=transcription-units-of-gene&id=', geneID, '&detail=low') %>%
+    url_encode
 
-  ## get TU
-  TUID <- xmlNodeAttr(TUInfoXML, '/ptools-xml/Transcription-Unit', 'frameid')
-  TUID <- testLen(TUID, NULL, TUID)
+  tuxml <- read_xml(url)
 
-  return(TUID)
+  res <- list(TU = tuxml %>%
+                xml_find_all('/ptools-xml/Transcription-Unit/@ID') %>%
+                xml_text,
+              evidence = tuxml %>%
+                xml_find_all('/ptools-xml/Transcription-Unit/evidence/Evidence-Code/@ID') %>%
+                xml_text)
+
+  return(res)
 }
-
 
 
 ##' BioCyc Database API - Get TU information from BioCyc database.
@@ -36,73 +39,75 @@ getCycTUfGene <- function(geneID, speID, evidence = FALSE) {
 ##' @param speID The BioCyc species ID, for example "ECOLI" is for "Escherichia coli K-12 substr. MG1655".
 ##' @return A list of TU information.
 ##' @examples
-##' getCycTUInfo('TU0-6636', 'ECOLI')
-##' getCycTUInfo('TU00260', 'ECOLI')
-##' getCycTUInfo('TUC7Z-43', 'SMUT210007')
+##' getCycTUInfo('ECOLI:TU0-6636')
+##' getCycTUInfo('ECOLI:TU00260')
+##' getCycTUInfo('SMUT210007:TU1FZX-806')
 ##' @author Yulong Niu \email{yulong.niu@@hotmail.com}
-##' @importFrom XML xmlRoot xmlTreeParse
+##' @importFrom urltools url_encode
+##' @importFrom xml read_xml xml_text xml_find_all
 ##' @export
 ##'
-getCycTUInfo <- function(TUID, speID) {
+getCycTUInfo <- function(TUID) {
+
+  ## species identity
+  speid <- TUID %>%
+    strsplit(split = ':', fixed = TRUE) %>%
+    sapply('[[', 1)
 
   ## read in gene information XML
-  url <- paste('http://biocyc.org/apixml?fn=transcription-units-of-gene&id=', speID, ':', TUID, '&detail=full', sep = '')
-  TUInfoXML <- xmlRoot(xmlTreeParse(url))
+  url <- paste0('http://biocyc.org/apixml?fn=transcription-units-of-gene&id=', TUID, '&detail=full') %>%
+    url_encode
 
-  ## genes in the TU
-  geneIDs <- xmlNodeAttr(TUInfoXML, '//component/Gene', 'frameid')
+  tuxml <- read_xml(url)
+
+  ## genes
+  genes <- tuxml %>%
+    xml_find_all('//component/Gene/@frameid') %>%
+    xml_text %>%
+    paste(speid, ., sep = ':')
 
   ## terminator
-  terminatorName <- xmlNodeAttr(TUInfoXML, '//component/Terminator', 'frameid')
-  terminatorName <- testLen(terminatorName, NULL, terminatorName)
-  ## right end
-  rightPos <- xmlNodeVal(TUInfoXML, '//component/Terminator/right-end-position')
-  rightPos <- testLen(rightPos, NULL, rightPos)
-  ## left end
-  leftPos <- xmlNodeVal(TUInfoXML, '//component/Terminator/left-end-position')
-  leftPos <- testLen(leftPos, NULL, leftPos)
-  ## teminator evidence
-  TMEv <- xmlNodeAttr(TUInfoXML, '//component/Terminator/evidence/Evidence-Code', 'frameid')
-  TMEv <- testLen(TMEv, NULL, TMEv)
-  terminator <- list(name = terminatorName,
-                     rightPos = rightPos,
-                     leftPos = leftPos,
-                     Ev = TMEv)
+  terminator <- list(id = tuxml %>%
+                       xml_find_all('//Terminator/@ID') %>%
+                       xml_text,
+                     right = tuxml %>%
+                       xml_find_all('//Terminator/right-end-position') %>%
+                       xml_text,
+                     left =  tuxml %>%
+                       xml_find_all('//Terminator/left-end-position') %>%
+                       xml_text,
+                     evidence = tuxml %>%
+                       xml_find_all('//Terminator/evidence/Evidence-Code/@ID') %>%
+                       xml_text)
 
   ## promoter
-  promoterName <- xmlNodeAttr(TUInfoXML, '//component/Promoter', 'frameid')
-  promoterName <- testLen(promoterName, NULL, promoterName)
-  ## promoter common name
-  promoterComName <- xmlNodeVal(TUInfoXML, '//component/Promoter/common-name')
-  promoterComName <- testLen(promoterComName, NULL, promoterComName)
-  ## right end
-  rightPos <- xmlNodeVal(TUInfoXML, '//component/Promoter/right-end-position')
-  rightPos <- testLen(rightPos, NULL, rightPos)
-  ## left end
-  leftPos <- xmlNodeVal(TUInfoXML, '//component/Promoter/left-end-position')
-  leftPos <- testLen(leftPos, NULL, leftPos)
-  ## promoter evidence
-  PMEv <- xmlNodeAttr(TUInfoXML, '//component/Promoter/evidence/Evidence-Code', 'frameid')
-  PMEv <- testLen(PMEv, NULL, PMEv)
-  promoter <- list(name = promoterName,
-                   comName = promoterComName,
-                   rightPos = rightPos,
-                   leftPos = leftPos,
-                   Ev = PMEv)
+  promoter <- list(id = tuxml %>%
+                     xml_find_all('//Promoter/@ID') %>%
+                     xml_text,
+                   right = tuxml %>%
+                     xml_find_all('//Promoter/right-end-position') %>%
+                     xml_text,
+                   left =  tuxml %>%
+                     xml_find_all('//Promoter/left-end-position') %>%
+                     xml_text,
+                   evidence = tuxml %>%
+                     xml_find_all('//Promoter/evidence/Evidence-Code/@ID') %>%
+                     xml_text)
+
 
   ## TU evidence
-  TUEv <- xmlNodeAttr(TUInfoXML, '//Transcription-Unit/evidence/Evidence-Code', 'frameid')
-  TUEv <- testLen(TUEv, NULL, TUEv)
+  TUEv <- tuxml %>%
+    xml_find_all('//Transcription-Unit/evidence/Evidence-Code/@ID') %>%
+    xml_text
 
   ## merge
-  cycTU <- list(geneIDs = geneIDs,
-                terminator = terminator,
-                promoter = promoter,
-                TUEv = TUEv,
-                url = url)
+  res <- list(genes = genes,
+              promoter = promoter,
+              terminator = terminator,
+              evidence = TUEv,
+              url = url)
 
-  return(cycTU)
-
+  return(res)
 }
 
 
@@ -115,20 +120,22 @@ getCycTUInfo <- function(TUID, speID) {
 ##' @return A vector of TU ids.
 ##' @examples
 ##' ## get Streptococcus mutans UA159 TU
-##' smTU <- getBioCycTU('SMUT210007')
+##' smTU <- getCycTU('SMUT210007')
 ##' @author Yulong Niu \email{yulong.niu@@hotmail.com}
 ##' @importFrom xml2 read_xml xml_text xml_find_all
 ##' @importFrom urltools url_encode
 ##' @importFrom magrittr %>%
 ##' @export
 ##'
-getBioCycTU <- function(speID){
+getCycTU <- function(speID){
 
   tuxml <- paste0('http://websvc.biocyc.org/xmlquery?[x:x<-', speID, '^^Transcription-Units]') %>%
     url_encode %>%
     read_xml
 
-  TUVec <- xml_text(xml_find_all(TUxml, '//Transcription-Unit/@ID'))
+  res <- tuxml %>%
+    xml_find_all('//Transcription-Unit/@ID') %>%
+    xml_text
 
-  return(TUVec)
+  return(res)
 }
