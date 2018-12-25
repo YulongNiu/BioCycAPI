@@ -136,6 +136,9 @@ getCycGeneInfo <- function(geneID, speID){
                 xml_text,
               left = genexml %>%
                 xml_find_all('//left-end-position') %>%
+                xml_text,
+              centisome = genexml %>%
+                xml_find_all('//centisome-position') %>%
                 xml_text)
   ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -143,6 +146,10 @@ getCycGeneInfo <- function(geneID, speID){
   ## select contains 'accession*', 'synonym', 'common-name'
   name <- genexml %>%
     xml_find_all('//*[contains(name(), "accession")] | //synonym | //common-name') %>%
+    xml_text
+
+  protein <- genexml %>%
+    xml_find_all('//Protein/@frameid') %>%
     xml_text
   ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -155,6 +162,7 @@ getCycGeneInfo <- function(geneID, speID){
   ## merge
   res <- list(loc = loc,
               name = name,
+              protein = protein,
               TU = TU,
               url = url)
 
@@ -162,9 +170,9 @@ getCycGeneInfo <- function(geneID, speID){
 }
 
 
-##' Translate KEGG ID to BioCyc ID.
+##' Convert KEGG ID to BioCyc ID.
 ##'
-##' Translate the KEGG gene ID to BioCyc gene ID is tricky. In BioCyc, the gene names is not in a uniform; some of them use symbol like "dnaK", but some use the KEGGID. For genes, if symbol is given, we use 'http://biocyc.org/xmlquery?query=[x:x<-ECOLI^^genes,x^name="atpA"]&detail=full'. There are two circumstances that will return "0": one is that  BioCyc database may marker some genes as "Pseudo-Genes", and the other is different gene symbols in KEGG and BioCyc. For proteins, we at first transfer KEGG gene IDs to UniProt IDs, and then to BioCyc gene IDs.
+##' Convert the KEGG gene ID to BioCyc gene ID is tricky. In BioCyc, the gene name is not in a uniform; some of them use symbol like "dnaK", but some use the KEGG ID. For genes, if symbol is given, we use 'http://biocyc.org/xmlquery?query=[x:x<-ECOLI^^genes,x^name="atpA"]&detail=full'. There are two circumstances that will return "0": one is that  BioCyc database may marker some genes as "Pseudo-Genes", and the other is different gene symbols in KEGG and BioCyc. For proteins, we at first transfer KEGG gene IDs to UniProt IDs, and then to BioCyc gene IDs.
 ##' 
 ##' @title Transfer KEGG ID to BioCyc ID.
 ##' @param KEGGID Only one KEGG ID
