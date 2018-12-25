@@ -4,12 +4,10 @@
 \alias{getCycGeneInfo}
 \title{Get one gene information from BioCyc.}
 \usage{
-getCycGeneInfo(geneID, speID)
+getCycGeneInfo(geneID)
 }
 \arguments{
 \item{geneID}{A BioCyc gene ID with the length of 1.}
-
-\item{speID}{The BioCyc species ID, for example "ECOLI" is for "Escherichia coli K-12 substr. MG1655".}
 }
 \value{
 A list.
@@ -22,9 +20,8 @@ The gene information from BioCyc including genome location and gene name informa
 }
 \examples{
 ## get "atpE" gene information from Ecoli K-12 MG1655 strain.
-getCycGeneInfo('EG10102', 'ECOLI')
+getCycGeneInfo('ECOLI:EG10102')
 }
 \author{
-Yulong Niu \email{niuylscu@gmail.com}
+Yulong Niu \email{yulong.niu@hotmail.com}
 }
-

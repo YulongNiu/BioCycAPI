@@ -1,2 +1,2 @@
 ## suppress the stupid NOTE in R package check
-globalVariables(c('i', 'j'))
+globalVariables(c('i', 'j', '.', 'BioCycID', 'LatinName'))
