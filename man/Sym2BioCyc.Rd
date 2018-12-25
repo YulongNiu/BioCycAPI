@@ -4,12 +4,12 @@
 \alias{Sym2BioCyc}
 \title{KEGG symbol to BioCyc ID.}
 \usage{
-Sym2BioCyc(symbol, speBioCyc)
+Sym2BioCyc(symbol, speID)
 }
 \arguments{
 \item{symbol}{The gene symbol extract from KEGG.}
 
-\item{speBioCyc}{Species KEGG ID}
+\item{speID}{The BioCyc species ID, for example "ECOLI" is for "Escherichia coli K-12 substr. MG1655".}
 }
 \value{
 A \code{list}. The BioCyc gene ID or "0", if gene is not found.

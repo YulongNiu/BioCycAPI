@@ -4,12 +4,12 @@
 \alias{ConvGeneKEGG2BioCyc}
 \title{Transfer KEGG ID to BioCyc ID.}
 \usage{
-ConvGeneKEGG2BioCyc(geneKEGG, speBioCyc, type = "gene")
+ConvGeneKEGG2BioCyc(geneKEGG, speID, type = "gene")
 }
 \arguments{
 \item{geneKEGG}{The gene symbol extract from KEGG.}
 
-\item{speBioCyc}{Species KEGG ID}
+\item{speID}{The BioCyc species ID, for example "ECOLI" is for "Escherichia coli K-12 substr. MG1655".}
 
 \item{type}{'gene' or 'protein'}
 }

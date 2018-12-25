@@ -106,6 +106,7 @@ getCycGenes <- function(speID, type = 'genes'){
   return(res)
 }
 
+
 ##' BioCyc Database API - Get gene information from BioCyc database.
 ##'
 ##' The gene information from BioCyc including genome location and gene name information. Some genes in BioCyc may do not have common names or accession names In this circumstance, "NULL" will be return
@@ -183,8 +184,8 @@ getCycGeneInfo <- function(geneID){
 ##'
 ##' @title Transfer KEGG ID to BioCyc ID.
 ##' @param geneKEGG The gene symbol extract from KEGG.
-##' @param speBioCyc Species KEGG ID
 ##' @param type 'gene' or 'protein'
+##' @inheritParams getCycGenes
 ##' @return The BioCyc gene ID or "0", if gene is not found.
 ##' @examples
 ##' ## symbol is "atpD"
@@ -205,13 +206,13 @@ getCycGeneInfo <- function(geneID){
 ##' @importFrom magrittr %>%
 ##' @export
 ##'
-ConvGeneKEGG2BioCyc <- function(geneKEGG, speBioCyc, type = 'gene') {
+ConvGeneKEGG2BioCyc <- function(geneKEGG, speID, type = 'gene') {
 
   if (type == 'gene') {
     ## convert to symbol
     symbol <- KEGG2Sym(geneKEGG)
     for (i in seq_along(symbol)) {
-      res <- Sym2BioCyc(symbol[i], speBioCyc)
+      res <- Sym2BioCyc(symbol[i], speID)
       if (length(res$gene) != 0) {
         break
       } else {}
@@ -227,7 +228,7 @@ ConvGeneKEGG2BioCyc <- function(geneKEGG, speBioCyc, type = 'gene') {
       sapply('[[', 2) ## 'up:Q8DWN9' --> 'Q8DWN9'
 
     ## get BioCyc ID
-    url <- paste0('https://websvc.biocyc.org/', speBioCyc, '/foreignid?ids=Uniprot:', uniproID)
+    url <- paste0('https://websvc.biocyc.org/', speID, '/foreignid?ids=Uniprot:', uniproID)
 
     cycID <- url %>%
       webTable(ncol = 1) %>%
@@ -313,9 +314,9 @@ KEGG2Sym <- function(geneKEGG) {
 ##' @importFrom magrittr %>%
 ##' @export
 ##'
-Sym2BioCyc <- function(symbol, speBioCyc) {
+Sym2BioCyc <- function(symbol, speID) {
 
-  url <- paste0('http://websvc.biocyc.org/xmlquery?query=[x:x<-', speBioCyc, '^^genes,x^name%3D"', symbol, '"]&detail=full') %>%
+  url <- paste0('http://websvc.biocyc.org/xmlquery?query=[x:x<-', speID, '^^genes,x^name%3D"', symbol, '"]&detail=full') %>%
     url_encode
 
   symbolxml <- read_xml(url)

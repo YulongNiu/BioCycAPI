@@ -1,15 +1,18 @@
 ##' BioCyc Database API - Pathway
 ##'
-##' getCycPathway(): Get whole pathways list,
-##' getCycGenesfPathway(): Get genes from a given pathway ID.
+##' \itemize{
+##'   \item \code{getCycPathway()}: Get whole pathways list.
+##'   \item \code{getCycGenesfPathway()}: Get genes from a given pathway ID.
+##' }
 ##'
 ##' It may take more than 10 minutes to retrieve the xml file.
 ##' @title Pathway
-##' @inheritParams getCycTU
+##' @inheritParams getCycGenes
 ##' @return
-##'
-##' getCycPathway(): A vector of pathway ids.
-##' getCycGenesfPathway(): A vector of gene ids.
+##' \itemize{
+##'   \item \code{getCycPathway()}:  A \code{character vector} indicates pathway ids.
+##'   \item \code{getCycGenesfPathway()}: A \code{list} indicates genes, proteins, and common names.
+##' }
 ##'
 ##' @examples
 ##' ## Candida albicans SC5314 pathways
@@ -18,18 +21,23 @@
 ##' ## genes of pathway "CALBI:PWY3B3-8"
 ##' genes <- getCycGenesfPathway('CALBI:PWY3B3-8')
 ##' @author Yulong Niu \email{yulong.niu@@hotmail.com}
+##' @importFrom urltools url_encode
 ##' @importFrom xml2 read_xml xml_text xml_find_all
+##' @importFrom magrittr %>%
 ##' @rdname pathway
 ##' @export
 ##'
 getCycPathway <- function(speID) {
 
-  url <- paste0('http://biocyc.org/xmlquery?[x:x%3C-', speID, '^^pathways]')
-  pathxml <- read_xml(url)
+  pathxml <- url <- paste0('http://biocyc.org/xmlquery?[x:x<-', speID, '^^pathways]') %>%
+    url_encode %>%
+    read_xml
 
-  pathVec <- xml_text(xml_find_all(pathxml, '//Pathway/@ID'))
+  res <- pathxml %>%
+    xml_find_all('//Pathway/@ID') %>%
+    xml_text
 
-  return(pathVec)
+  return(res)
 }
 
 
@@ -39,11 +47,26 @@ getCycPathway <- function(speID) {
 ##' @rdname pathway
 ##' @export
 getCycGenesfPathway <- function(pathID) {
-  url <- paste0('http://websvc.biocyc.org/apixml?fn=genes-of-pathway&id=', pathID)
-  genexml <- read_xml(url)
 
-  geneVec <- xml_text(xml_find_all(genexml, '//Gene/@ID'))
+  speID <- pathID %>%
+    strsplit(split = ':', fixed = TRUE) %>%
+    sapply('[[', 1)
 
-  return(geneVec)
+  genexml <- paste0('http://websvc.biocyc.org/apixml?fn=genes-of-pathway&id=', pathID) %>%
+    url_encode %>%
+    read_xml
+
+  res <- list(genes = genexml %>%
+                xml_find_all('//Gene/@ID') %>%
+                xml_text,
+              proteins = genexml %>%
+                xml_find_all('//Gene/product/Protein/@frameid') %>%
+                xml_text %>%
+                paste(speID, ., sep = ':'),
+              names = genexml %>%
+                xml_find_all('//Gene/common-name') %>%
+                xml_text)
+
+  return(res)
 }
 

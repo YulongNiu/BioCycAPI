@@ -15,15 +15,19 @@ getCycGenesfPathway(pathID)
 \item{pathID}{Pathway ID.}
 }
 \value{
-getCycPathway(): A vector of pathway ids.
-getCycGenesfPathway(): A vector of gene ids.
+\itemize{
+  \item \code{getCycPathway()}:  A \code{character vector} indicates pathway ids.
+  \item \code{getCycGenesfPathway()}: A \code{list} indicates genes, proteins, and common names.
+}
 }
 \description{
 BioCyc Database API - Pathway
 }
 \details{
-getCycPathway(): Get whole pathways list,
-getCycGenesfPathway(): Get genes from a given pathway ID.
+\itemize{
+  \item \code{getCycPathway()}: Get whole pathways list.
+  \item \code{getCycGenesfPathway()}: Get genes from a given pathway ID.
+}
 
 It may take more than 10 minutes to retrieve the xml file.
 }
