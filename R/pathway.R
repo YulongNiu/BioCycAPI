@@ -70,9 +70,8 @@ getCycGenesfPathway <- function(pathID) {
                 xml_find_all('//Gene/@ID') %>%
                 xml_text,
               proteins = genexml %>%
-                xml_find_all('//Gene/product/Protein/@frameid') %>%
-                xml_text %>%
-                paste(speID, ., sep = ':'),
+                xml_find_all('//Gene/product/Protein') %>%
+                {paste(xml_attr(., 'orgid'), xml_attr(., 'frameid'), sep = ':')},
               names = genexml %>%
                 xml_find_all('//Gene/common-name') %>%
                 xml_text)
