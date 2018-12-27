@@ -16,7 +16,7 @@ getCycGenesfPathway(pathID)
 }
 \value{
 \itemize{
-  \item \code{getCycPathway()}:  A \code{character vector} indicates pathway ids.
+  \item \code{getCycPathway()}:  A \code{tbl_df} contains 1st column is pathway ID and 2nd column is pathway annotation.
   \item \code{getCycGenesfPathway()}: A \code{list} indicates genes, proteins, and common names.
 }
 }
