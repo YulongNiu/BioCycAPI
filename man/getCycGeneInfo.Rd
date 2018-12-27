@@ -21,6 +21,9 @@ The gene information from BioCyc including genome location and gene name informa
 \examples{
 ## get "atpE" gene information from Ecoli K-12 MG1655 strain.
 getCycGeneInfo('ECOLI:EG10102')
+
+## no TU
+getCycGeneInfo('CALBI:ORF19.1634')
 }
 \author{
 Yulong Niu \email{yulong.niu@hotmail.com}

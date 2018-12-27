@@ -10,7 +10,7 @@
 ##' @inheritParams getCycGenes
 ##' @return
 ##' \itemize{
-##'   \item \code{getCycPathway()}:  A \code{character vector} indicates pathway ids.
+##'   \item \code{getCycPathway()}:  A \code{tbl_df} contains 1st column is pathway ID and 2nd column is pathway annotation.
 ##'   \item \code{getCycGenesfPathway()}: A \code{list} indicates genes, proteins, and common names.
 ##' }
 ##'
@@ -24,18 +24,28 @@
 ##' @importFrom urltools url_encode
 ##' @importFrom xml2 read_xml xml_text xml_find_all
 ##' @importFrom magrittr %>%
+##' @importFrom tibble tibble
 ##' @rdname pathway
 ##' @export
 ##'
 getCycPathway <- function(speID) {
 
-  pathxml <- url <- paste0('http://biocyc.org/xmlquery?[x:x<-', speID, '^^pathways]') %>%
+  pathxml <- paste0('http://biocyc.org/xmlquery?[x:x<-', speID, '^^pathways]') %>%
     url_encode %>%
     read_xml
 
-  res <- pathxml %>%
-    xml_find_all('//Pathway/@ID') %>%
-    xml_text
+  pathnodes <- pathxml %>%
+    xml_find_all('/ptools-xml/Pathway')
+
+  pathanno <- sapply(pathnodes, function(x){
+    eachanno <- xml_find_all(x, 'common-name') %>%
+      xml_text %>%
+      ifelse(length(.) == 0, '', .)
+    return(eachanno)
+  })
+
+  res <- tibble(pathID = xml_attr(pathnodes, 'ID'),
+                pathAnno = pathanno)
 
   return(res)
 }
@@ -43,7 +53,7 @@ getCycPathway <- function(speID) {
 
 
 ##' @param pathID Pathway ID.
-##' @importFrom xml2 read_xml xml_text xml_find_all
+##' @importFrom xml2 read_xml xml_text xml_find_all xml_attr
 ##' @rdname pathway
 ##' @export
 getCycGenesfPathway <- function(pathID) {
@@ -60,9 +70,8 @@ getCycGenesfPathway <- function(pathID) {
                 xml_find_all('//Gene/@ID') %>%
                 xml_text,
               proteins = genexml %>%
-                xml_find_all('//Gene/product/Protein/@frameid') %>%
-                xml_text %>%
-                paste(speID, ., sep = ':'),
+                xml_find_all('//Gene/product/Protein') %>%
+                {paste(xml_attr(., 'orgid'), xml_attr(., 'frameid'), sep = ':')},
               names = genexml %>%
                 xml_find_all('//Gene/common-name') %>%
                 xml_text)

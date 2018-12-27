@@ -116,8 +116,11 @@ getCycGenes <- function(speID, type = 'genes'){
 ##' @examples
 ##' ## get "atpE" gene information from Ecoli K-12 MG1655 strain.
 ##' getCycGeneInfo('ECOLI:EG10102')
+##'
+##' ## no TU
+##' getCycGeneInfo('CALBI:ORF19.1634')
 ##' @author Yulong Niu \email{yulong.niu@@hotmail.com}
-##' @importFrom xml2 read_xml xml_find_all xml_text
+##' @importFrom xml2 read_xml xml_find_all xml_text xml_attr
 ##' @importFrom magrittr %>%
 ##' @importFrom urltools url_encode
 ##' @export
@@ -134,7 +137,10 @@ getCycGeneInfo <- function(geneID){
   genexml <- read_xml(url)
 
   ##~~~~~~~~~~~~~~~~~~~~location in genome~~~~~~~~~~~~~~~~~~~~~~~
-  loc <- list(direction = genexml %>%
+  loc <- list(element = genexml %>%
+                xml_find_all('//Genetic-Element') %>%
+                {paste(xml_attr(., 'orgid'), xml_attr(., 'frameid'), sep = ':')},
+              direction = genexml %>%
                 xml_find_all('//transcription-direction') %>%
                 xml_text,
               right = genexml %>%
@@ -162,9 +168,8 @@ getCycGeneInfo <- function(geneID){
 
   ##~~~~~~~~~~~~~~~~TU~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   TU <- genexml %>%
-    xml_find_all('//Transcription-Unit/@frameid') %>%
-    xml_text %>%
-    paste(speID, ., sep = ':')
+    xml_find_all('//Transcription-Unit') %>%
+    {paste(xml_attr(., 'orgid'), xml_attr(., 'frameid'), sep = ':')}
   ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
   ## merge
