@@ -53,7 +53,7 @@ getCycPathway <- function(speID) {
 
 
 ##' @param pathID Pathway ID.
-##' @importFrom xml2 read_xml xml_text xml_find_all
+##' @importFrom xml2 read_xml xml_text xml_find_all xml_attr
 ##' @rdname pathway
 ##' @export
 getCycGenesfPathway <- function(pathID) {
